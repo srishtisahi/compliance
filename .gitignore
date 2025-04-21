@@ -117,13 +117,36 @@ docker-compose.override.yml
 uploads/
 temp/
 *.pdf.tmp
+uploads/temp/
+uploads/**/*.pdf
+uploads/**/*.png
+uploads/**/*.jpg
+uploads/**/*.jpeg
+uploads/**/*.docx
+uploads/**/*.doc
+uploads/**/*.txt
 
 # Generated output from document processing
 processed-documents/
 ocr-output/
 
+# Redis cache for document processing
+redis-data/
+redis/
+redis-volume/
+dump.rdb
+
 # Logs from API calls
 api-logs/
+logs/*.log
+
+# Mistral OCR specific
+*-ocr-result.json
+*.pdf.processing
+*.pdf.processed
+document-hash-*.json
+ocr-cache/
+document-cache/
 
 # Additional items to ignore
 
@@ -191,3 +214,7 @@ config.local.js
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Test files
+*/cache-test.ts
+*/db-test.ts
