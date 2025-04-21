@@ -1,0 +1,35 @@
+{
+  "name": "compliance-system",
+  "version": "1.0.0",
+  "description": "Legal compliance system for construction industry",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "test": "jest",
+    "test:db": "ts-node src/utils/db-test.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "axios": "^1.8.4",
+    "dotenv": "^16.3.1",
+    "express": "^4.21.2",
+    "lodash": "^4.17.21",
+    "mongodb": "^5.7.0",
+    "mongoose": "^7.5.0",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/lodash": "^4.17.16",
+    "@types/mongoose": "^5.11.97",
+    "@types/node": "^20.5.7",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

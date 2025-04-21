@@ -2,6 +2,7 @@
 node_modules/
 /.pnp
 .pnp.js
+.yarn/install-state.gz
 
 # Build outputs
 /dist
@@ -11,10 +12,21 @@ node_modules/
 
 # Environment variables
 .env
+.env.*
+!.env.example
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+*.env
+
+# MongoDB credentials and configuration
+**/mongodb*.config
+**/mongo*.config
+**/mongodb*.json
+**/mongo*.json
+**/mongodb_uri*
+**/mongo_uri*
 
 # Log files
 logs
@@ -74,5 +86,108 @@ out/
 
 # Cursor specific
 .cursor/ 
-
 .cursorrules
+
+# MongoDB specific
+*.dump
+dump/
+/dump/
+*.mongo
+*.mongodb
+mongodb-data/
+
+# Docker
+docker-volume/
+.docker/
+*.dockerfile
+docker-compose.override.yml
+
+# API keys and secrets backup files
+*apikey*
+*secret*
+*.key
+*credential*
+# But don't ignore template files
+!*.key.example
+!*apikey.example
+!*secret.example
+!*credential.example
+
+# Local uploads and temp files
+uploads/
+temp/
+*.pdf.tmp
+
+# Generated output from document processing
+processed-documents/
+ocr-output/
+
+# Logs from API calls
+api-logs/
+
+# Additional items to ignore
+
+# macOS Files
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# MongoDB Compass generated files
+.dbshell
+.mongorc.js
+
+# Cypress testing
+cypress/videos/
+cypress/screenshots/
+
+# Turborepo 
+.turbo/
+
+# Storybook
+storybook-static/
+.storybook/dist
+
+# AWS/Lambda/Serverless
+.serverless/
+.aws/
+.dynamodb/
+
+# Additional CI/CD files
+.github/workflows/.secrets
+.gitlab/
+.gitlab-ci.yml
+
+# Backup files
+*.bak
+*.backup
+*~
+*.swp
+
+# OpenAPI/Swagger generated files
+api-spec/dist/
+swagger-ui/
+
+# Local backups
+*-backup/
+*-backup.*
+*.backup-*
+
+# Potential sensitive files
+auth.json
+config.local.js
+*config.local.json
+
+# JetBrains IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json

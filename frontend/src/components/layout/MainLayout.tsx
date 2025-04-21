@@ -8,9 +8,9 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col w-full" style={{ contain: 'layout' }}>
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 w-full" style={{ contain: 'layout' }}>{children}</main>
       <Footer />
     </div>
   );

@@ -1,89 +1,84 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Hero } from "@/components/layout/Hero";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { FeatureCardsSkeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulate loading data
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <MainLayout>
-      <section className="py-12 md:py-24 lg:py-32 xl:py-48">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center space-y-4 text-center">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
-                Real-Time Compliance Management for Construction Industry
-              </h1>
-              <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                Stay updated with the latest compliance requirements and regulations in the construction industry.
-              </p>
-            </div>
-            <div className="space-x-4">
-              <Button asChild>
-                <Link href="/compliance-check">
-                  Check Compliance
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/document-upload">
-                  Upload Documents
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <Hero />
 
-      <section className="container py-12 md:py-24 lg:py-32">
-        <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Real-Time Updates</CardTitle>
-              <CardDescription>
-                Get real-time compliance information from government sources.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              Our system connects directly to government databases and resources to provide the most current compliance information.
-            </CardContent>
-            <CardFooter>
-              <Button variant="ghost" asChild>
-                <Link href="/features">Learn More</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Document Analysis</CardTitle>
-              <CardDescription>
-                Upload and analyze your construction documents for compliance issues.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              Our AI-powered document analysis tools can review your documents and highlight potential compliance concerns.
-            </CardContent>
-            <CardFooter>
-              <Button variant="ghost" asChild>
-                <Link href="/document-upload">Upload Now</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Compliance Reports</CardTitle>
-              <CardDescription>
-                Generate detailed compliance reports for your projects.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              Get comprehensive reports on compliance status, risks, and recommendations for your construction projects.
-            </CardContent>
-            <CardFooter>
-              <Button variant="ghost" asChild>
-                <Link href="/compliance-reports">View Reports</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
+      <section className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 md:py-16 lg:py-24">
+        {isLoading ? (
+          <FeatureCardsSkeleton />
+        ) : (
+          <div className="mx-auto max-w-5xl py-8 grid gap-8 md:grid-cols-3">
+            <Card className="flex flex-col h-full content-visible-card">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl mb-2">Real-Time Updates</CardTitle>
+                <CardDescription>
+                  Get real-time compliance information from government sources.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-6 flex-grow">
+                <p>Our system connects directly to government databases and resources to provide the most current compliance information.</p>
+              </CardContent>
+              <CardFooter className="pt-4 mt-auto border-t">
+                <Button variant="secondary" size="default" className="w-full" asChild>
+                  <Link href="/features">Learn More</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+            <Card className="flex flex-col h-full content-visible-card">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl mb-2">Document Analysis</CardTitle>
+                <CardDescription>
+                  Upload and analyze your construction documents for compliance issues.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-6 flex-grow">
+                <p>Our AI-powered document analysis tools can review your documents and highlight potential compliance concerns.</p>
+              </CardContent>
+              <CardFooter className="pt-4 mt-auto border-t">
+                <Button variant="secondary" size="default" className="w-full" asChild>
+                  <Link href="/document-upload">Upload Now</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+            <Card className="flex flex-col h-full content-visible-card">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl mb-2">Compliance Reports</CardTitle>
+                <CardDescription>
+                  Generate detailed compliance reports for your projects.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-6 flex-grow">
+                <p>Get comprehensive reports on compliance status, risks, and recommendations for your construction projects.</p>
+              </CardContent>
+              <CardFooter className="pt-4 mt-auto border-t">
+                <Button variant="secondary" size="default" className="w-full" asChild>
+                  <Link href="/compliance-reports">View Reports</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        )}
       </section>
     </MainLayout>
   );

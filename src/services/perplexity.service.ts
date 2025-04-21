@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import { PerplexityApiError, createApiErrorFromAxiosError } from '../api/middlewares/errorHandler';
 
 // Define types for Perplexity API
 interface PerplexityRequestOptions {
@@ -46,6 +47,11 @@ export class PerplexityService {
     try {
       const { query, focus = 'all', maxResults = 10 } = options;
       
+      // Check if API key is set
+      if (!this.apiKey) {
+        throw new PerplexityApiError('Perplexity API key is not set', 500, 'API_KEY_MISSING');
+      }
+      
       // Configure request for Perplexity API
       const config = {
         headers: {
@@ -76,7 +82,7 @@ export class PerplexityService {
       return processedResponse;
     } catch (error) {
       logger.error('Error searching Perplexity API:', error);
-      throw new Error('Failed to search for compliance information');
+      throw createApiErrorFromAxiosError(error, 'perplexity');
     }
   }
   

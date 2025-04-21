@@ -2,6 +2,7 @@ import axios from 'axios';
 import { logger } from '../utils/logger';
 import fs from 'fs';
 import FormData from 'form-data';
+import { MistralApiError, createApiErrorFromAxiosError } from '../api/middlewares/errorHandler';
 
 // Define types for Mistral OCR API
 interface MistralOCROptions {
@@ -44,9 +45,14 @@ export class MistralService {
     try {
       const { filePath, language = 'en', outputFormat = 'text' } = options;
       
+      // Check if API key is set
+      if (!this.apiKey) {
+        throw new MistralApiError('Mistral API key is not set', 500, 'API_KEY_MISSING');
+      }
+      
       // Check if file exists
       if (!fs.existsSync(filePath)) {
-        throw new Error(`File not found: ${filePath}`);
+        throw new MistralApiError(`File not found: ${filePath}`, 400, 'FILE_NOT_FOUND');
       }
       
       // Prepare form data
@@ -81,7 +87,7 @@ export class MistralService {
       return result;
     } catch (error) {
       logger.error('Error extracting text with Mistral OCR:', error);
-      throw new Error('Failed to extract text from document');
+      throw createApiErrorFromAxiosError(error, 'mistral');
     }
   }
   
@@ -104,7 +110,11 @@ export class MistralService {
       };
     } catch (error) {
       logger.error('Error processing legal document:', error);
-      throw new Error('Failed to process legal document');
+      // If it's already a MistralApiError, just rethrow it
+      if (error instanceof MistralApiError) {
+        throw error;
+      }
+      throw new MistralApiError('Failed to process legal document', 500);
     }
   }
   

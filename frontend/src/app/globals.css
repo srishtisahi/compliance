@@ -1,6 +1,47 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Add critical CSS for dark mode text colors */
+/* This ensures text is properly styled during initial render regardless of theme */
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Content visibility utility classes */
+.content-visible {
+  content-visibility: auto;
+  contain: content;
+}
+
+.content-visible-card {
+  content-visibility: auto;
+  contain: content;
+  contain-intrinsic-size: 0 400px;
+}
+
+.content-visible-card-lg {
+  content-visibility: auto;
+  contain: content;
+  contain-intrinsic-size: 0 600px;
+}
+
+.content-visible-card-sm {
+  content-visibility: auto;
+  contain: content;
+  contain-intrinsic-size: 0 200px;
+}
+
+.content-visible-hero {
+  content-visibility: auto;
+  contain: layout paint size;
+  contain-intrinsic-size: 100% 600px;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -76,6 +117,7 @@
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
+  --container-max-width: 1400px;
 }
 
 .dark {

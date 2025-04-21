@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import { GeminiApiError, createApiErrorFromAxiosError } from '../api/middlewares/errorHandler';
 
 // Define types for Gemini API
 interface GeminiRequestOptions {
@@ -49,6 +50,11 @@ export class GeminiService {
         topK = 40,
         topP = 0.95
       } = options;
+      
+      // Check if API key is set
+      if (!this.apiKey) {
+        throw new GeminiApiError('Google Gemini API key is not set', 500, 'API_KEY_MISSING');
+      }
       
       // Build the API URL with API key
       const url = `${this.baseUrl}/models/${this.model}:generateContent?key=${this.apiKey}`;
@@ -122,7 +128,7 @@ export class GeminiService {
       };
     } catch (error) {
       logger.error('Error generating content with Gemini:', error);
-      throw new Error('Failed to generate content with Gemini');
+      throw createApiErrorFromAxiosError(error, 'gemini');
     }
   }
   
@@ -157,7 +163,11 @@ Format the response in a clear, structured manner that a legal professional woul
       return result.text;
     } catch (error) {
       logger.error('Error analyzing compliance information:', error);
-      throw new Error('Failed to analyze compliance information');
+      // If it's already a GeminiApiError, just rethrow it
+      if (error instanceof GeminiApiError) {
+        throw error;
+      }
+      throw new GeminiApiError('Failed to analyze compliance information', 500);
     }
   }
 }

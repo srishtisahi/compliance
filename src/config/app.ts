@@ -3,10 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { rateLimit } from 'express-rate-limit';
-import dotenv from 'dotenv';
 
-// Load environment variables
-dotenv.config();
+// Import configuration
+import { config } from './env';
 
 // Import routes (to be created)
 import apiRoutes from '../api/routes';
@@ -14,6 +13,7 @@ import apiRoutes from '../api/routes';
 // Import custom middleware
 import { errorHandler } from '../api/middlewares/errorHandler';
 import { notFoundHandler } from '../api/middlewares/notFoundHandler';
+import { requestLogger } from '../api/middlewares/requestLogger';
 import { logger } from '../utils/logger';
 
 // Initialize express app
@@ -21,8 +21,8 @@ const app: Application = express();
 
 // Set up rate limiting
 const limiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes default
-  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // 100 requests per window default
+  windowMs: config.RATE_LIMIT_WINDOW_MS,
+  max: config.RATE_LIMIT_MAX_REQUESTS,
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many requests from this IP, please try again later.',
@@ -39,23 +39,27 @@ app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+  origin: config.CORS_ORIGIN,
   credentials: true,
 }));
 
-// HTTP request logger
-app.use(morgan('dev', {
-  stream: {
-    write: (message: string) => logger.http(message.trim()),
-  },
-}));
+// Apply custom request logger middleware
+app.use(requestLogger);
+
+// HTTP request logger using morgan (can be disabled since we now have our own logger)
+if (config.USE_MORGAN_LOGGER) {
+  app.use(morgan('dev', {
+    stream: {
+      write: (message: string) => logger.http(message.trim()),
+    },
+  }));
+}
 
 // Apply rate limiting to all requests
 app.use(limiter);
 
 // API routes
-const apiPrefix = process.env.API_PREFIX || '/api/v1';
-app.use(apiPrefix, apiRoutes);
+app.use(config.API_PREFIX, apiRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

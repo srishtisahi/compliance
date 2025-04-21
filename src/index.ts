@@ -1,21 +1,18 @@
-import dotenv from 'dotenv';
 import app from './config/app';
 import { connectDB } from './config/database';
 import { logger } from './utils/logger';
-
-// Load environment variables
-dotenv.config();
+import { config } from './config/env';
 
 // Set the port
-const PORT = process.env.PORT || 3000;
+const PORT = config.PORT;
 
 // Connect to MongoDB
 connectDB();
 
 // Start the server
 const server = app.listen(PORT, () => {
-  logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-  logger.info(`API available at http://localhost:${PORT}${process.env.API_PREFIX || '/api/v1'}`);
+  logger.info(`Server running in ${config.NODE_ENV} mode on port ${PORT}`);
+  logger.info(`API available at http://localhost:${PORT}${config.API_PREFIX}`);
 });
 
 // Handle unhandled promise rejections
