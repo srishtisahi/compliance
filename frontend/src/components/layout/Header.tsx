@@ -49,6 +49,9 @@ export function Header() {
                     <Link href="/dashboard" className="w-full">Dashboard</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer">
+                    <Link href="/compliance-search" className="w-full">Compliance Search</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
                     <Link href="/compliance-check" className="w-full">Compliance Check</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer">
@@ -74,6 +77,9 @@ export function Header() {
                     <Link href="/auth/register" className="w-full">Register</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Link href="/compliance-search" className="w-full">Try Compliance Search</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer">
                     <Link href="/compliance-check" className="w-full">Try Compliance Check</Link>
                   </DropdownMenuItem>

@@ -51,6 +51,7 @@ coverage
 *.sln
 *.sw?
 .DS_Store
+**/.DS_Store
 
 # TypeScript cache
 *.tsbuildinfo
@@ -107,11 +108,20 @@ docker-compose.override.yml
 *secret*
 *.key
 *credential*
+*token*
+*password*
+*.token.*
+*access_token*
+*refresh_token*
+*authorization_code*
+*bearer_token*
 # But don't ignore template files
 !*.key.example
 !*apikey.example
 !*secret.example
 !*credential.example
+!*token.example
+!*password.example
 
 # Local uploads and temp files
 uploads/
@@ -218,3 +228,83 @@ config.local.js
 # Test files
 */cache-test.ts
 */db-test.ts
+
+# New directories for Perplexity, Mistral, and Gemini integration
+downloads/
+document-cache/
+perplexity-cache/
+scraped-content/
+query-cache/
+
+# Perplexity API specific files
+*perplexity-response*.json
+*perplexity-cache*.json
+*search-results*.json
+*compliance-search*.json
+
+# Web scraping cache
+scraper-cache/
+.scraped-urls
+*scraper-temp*
+
+# Government website content
+gov-content/
+government-extracts/
+regulatory-content/
+
+# Additional items for Perplexity and scraper integration
+perplexity-sonar-*.json
+perplexity-sample-*.json
+*-search-response-*.json
+scraped-*.html
+scraped-*.json
+scraped-*.txt
+scraped-*.pdf
+temporary-extracts/
+query-optimization-*.json
+source-prioritization-*.json
+*-prioritized-results.json
+example-search-results/
+*-optimized-query.json
+*-optimized-query.txt
+optimized-queries-cache/
+
+# Robots.txt cache 
+robots-cache/
+*-robots.txt
+robots-status.json
+
+# Temporary download folders
+download-cache/
+content-extraction-temp/
+
+# Avoid committing test API responses
+test/fixtures/perplexity-*
+test/fixtures/responses/
+test/fixtures/sample-scraped-*
+examples/output/
+
+# CDN and static content
+public/static/cached-content/
+public/static/scraped-images/
+
+# Example files that might contain real API responses 
+src/examples/output/
+**/examples/output/
+**/examples/**/*.json
+
+# Token files
+**/*token*
+**/tokens/*
+tokens.json
+*jwt*
+!*token*.example.js
+!*token*.example.ts
+!*token*.d.ts
+
+# Local development configurations
+config.local.js
+config.local.ts
+config.development.js
+config.development.ts
+local-config.json

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import complianceRoutes from './compliance.routes';
 import authRoutes from './auth.routes';
 import documentRoutes from './document.routes';
+import perplexityRoutes from './perplexity.routes';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.get('/health', (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/compliance', complianceRoutes);
 router.use('/documents', documentRoutes);
+router.use('/perplexity', perplexityRoutes);
 
 export default router; 
