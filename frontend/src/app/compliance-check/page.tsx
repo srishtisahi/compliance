@@ -6,31 +6,78 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ComplianceCheckSkeleton } from "@/components/ui/skeleton";
+import { useDocumentUpload } from "@/hooks/useDocumentUpload";
+import { toast } from "sonner";
+import { useComplianceAnalysis } from "@/hooks/useComplianceAnalysis";
 
 export default function ComplianceCheckPage() {
   const [isDragActive, setIsDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const { 
+    uploadDocument, 
+    isLoading: isUploading,
+    error: uploadError, 
+    uploadData, 
+    extractedText
+  } = useDocumentUpload();
+  const { 
+    analyzeDocument, 
+    isLoading: isAnalyzing,
+    error: analysisError, 
+    result: analysisResult, 
+    reset: resetAnalysis 
+  } = useComplianceAnalysis();
   
+  useEffect(() => {
+    resetAnalysis();
+  }, [selectedFile, resetAnalysis]);
+
   const handleSubmitPrompt = () => {
-    setIsLoading(true);
-    // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
     }, 2000);
   };
 
-  const handleAnalyzeDocument = () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+  const handleAnalyzeDocument = async () => {
+    if (!selectedFile) {
+      toast.error("Please select a document to analyze.");
+      return;
+    }
+    // Upload first. The result is the full API response.
+    const uploadResult = await uploadDocument(selectedFile);
+
+    // --> ADD LOGGING HERE <--
+    console.log('Received upload result in component:', uploadResult);
+
+    // Check the full result structure for success and extracted text
+    if (uploadResult?.success && uploadResult.data?.documentId && typeof uploadResult.data.extractedText === 'string') {
+      const docId = uploadResult.data.documentId;
+      const text = uploadResult.data.extractedText; // Get text directly from result data
+      
+      console.log("Upload successful, Document ID:", docId);
+      console.log("Extracted Text available (length):", text.length); 
+
+      // Now call analyzeDocument with the extracted text from the result
+      await analyzeDocument({
+        documentId: docId,
+        query: "Analyze this document for construction compliance issues.",
+        documentText: text, // <-- Pass the text from uploadResult.data
+        responseFormat: 'json'
+      });
+      setSelectedFile(null); // Clear selection after successful analysis start
+    } else if (uploadResult?.success) {
+        // Handle case where upload succeeded but OCR might have failed or text was empty/not string
+        console.warn('Upload succeeded but no valid extracted text was found in the response.');
+        toast.error('Document uploaded, but text could not be extracted for analysis.');
+        setSelectedFile(null); // Still clear selection
+    } 
+    // If uploadResult is null or success is false, the hook already showed an error toast
   };
   
+  const isLoading = isUploading || isAnalyzing;
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -185,10 +232,10 @@ export default function ComplianceCheckPage() {
                 variant="default" 
                 size="default" 
                 className="w-full text-sm md:text-base"
-                disabled={!selectedFile}
+                disabled={!selectedFile || isLoading}
                 onClick={handleAnalyzeDocument}
               >
-                {selectedFile ? "Analyze Document" : "Upload and Analyze"}
+                {isUploading ? "Uploading..." : isAnalyzing ? "Analyzing..." : (selectedFile ? "Analyze Document" : "Upload and Analyze")}
               </Button>
             </CardFooter>
           </Card>
@@ -208,9 +255,31 @@ export default function ComplianceCheckPage() {
               <div 
                 className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 md:p-8 text-center min-h-[200px]"
               >
-                <p className="text-xs md:text-sm text-gray-500">
-                  Submit a question or upload a document to see compliance analysis results here.
-                </p>
+                {uploadError && (
+                  <p className="text-xs md:text-sm text-red-500 mb-4">
+                    Upload Error: {uploadError}
+                  </p>
+                )}
+                {analysisError && (
+                  <p className="text-xs md:text-sm text-red-500 mb-4">
+                    Analysis Error: {analysisError}
+                  </p>
+                )}
+                
+                {!isLoading && !analysisResult && !uploadError && !analysisError && (
+                  <p className="text-xs md:text-sm text-gray-500">
+                    Submit a question or upload a document to see compliance analysis results here.
+                  </p>
+                )}
+
+                {analysisResult && (
+                  <div className="text-left w-full">
+                    <h3 className="font-bold mb-2">Analysis Results ({analysisResult.format}):</h3>
+                    <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">
+                      {typeof analysisResult.data === 'string' ? analysisResult.data : JSON.stringify(analysisResult.data, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

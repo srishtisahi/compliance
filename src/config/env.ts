@@ -159,7 +159,7 @@ validateEnv();
 export const config: EnvConfig = {
   // Server
   NODE_ENV: (process.env.NODE_ENV as EnvConfig['NODE_ENV']) || 'development',
-  PORT: parseNumber(process.env.PORT, 3000),
+  PORT: parseNumber(process.env.PORT, 3001),
   API_PREFIX: process.env.API_PREFIX || '/api/v1',
   
   // Database

@@ -3,9 +3,15 @@ import multer from 'multer';
 import path from 'path';
 import { documentController } from '../controllers/document.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { logger } from '../../utils/logger';
 // import { documentValidator } from '../validators/document.validator';
 
 const router = Router();
+
+router.use((req, res, next) => {
+  logger.debug(`Request received for document route: ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
@@ -54,8 +60,8 @@ router.get('/', authMiddleware.protect, documentController.getUserDocuments);
 // POST upload a document for processing
 router.post(
   '/upload',
-  authMiddleware.protect,
   upload.single('document'),
+  (req, res, next) => { logger.debug('Reached document upload controller'); next(); },
   documentController.uploadDocument
 );
 

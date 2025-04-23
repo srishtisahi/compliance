@@ -58,6 +58,9 @@ if (config.USE_MORGAN_LOGGER) {
 // Apply rate limiting to all requests
 app.use(limiter);
 
+// --> ADD THIS LOG <--
+logger.info(`Mounting API routes under prefix: '${config.API_PREFIX}'`); 
+
 // API routes
 app.use(config.API_PREFIX, apiRoutes);
 

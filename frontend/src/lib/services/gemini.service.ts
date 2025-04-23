@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { logger } from '../utils/logger';
-import { GeminiApiError, createApiErrorFromAxiosError } from '../api/middlewares/errorHandler';
+import { logger } from '@/lib/utils/logger'; // Updated path
+import { GeminiApiError, createApiErrorFromAxiosError } from '@/lib/errors/errorHandler'; // Updated path
 
-// Define types for Gemini API
+// Define types for Gemini API (Internal to this service)
 interface GeminiRequestOptions {
   prompt: string;
   maxOutputTokens?: number;
@@ -29,12 +29,13 @@ export class GeminiService {
   private model: string;
   
   constructor() {
+    // Use process.env directly for Next.js environment variables
     this.apiKey = process.env.GEMINI_API_KEY || '';
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-    this.model = 'gemini-2.5-flash-preview-04-17';
+    this.model = 'gemini-1.5-pro-latest';
     
     if (!this.apiKey) {
-      logger.warn('Google Gemini API key is not set. API calls will fail.');
+      logger.warn('Google Gemini API key (GEMINI_API_KEY) is not set. API calls will fail.');
     }
   }
   
@@ -51,15 +52,12 @@ export class GeminiService {
         topP = 0.95
       } = options;
       
-      // Check if API key is set
       if (!this.apiKey) {
         throw new GeminiApiError('Google Gemini API key is not set', 500, 'API_KEY_MISSING');
       }
       
-      // Build the API URL with API key
       const url = `${this.baseUrl}/models/${this.model}:generateContent?key=${this.apiKey}`;
       
-      // Prepare request body
       const requestBody = {
         contents: [
           {
@@ -97,29 +95,40 @@ export class GeminiService {
         ]
       };
       
-      // Make API request
       const response = await axios.post(url, requestBody);
       
-      // Extract relevant information from response
       let outputText = '';
       let safetyAttributes = undefined;
       
-      if (response.data && 
-          response.data.candidates && 
-          response.data.candidates.length > 0) {
-        const candidate = response.data.candidates[0];
+      // Safely access nested properties
+      const candidate = response.data?.candidates?.[0];
+      if (candidate) {
+        outputText = candidate.content?.parts?.[0]?.text || '';
         
-        if (candidate.content && 
-            candidate.content.parts && 
-            candidate.content.parts.length > 0) {
-          outputText = candidate.content.parts[0].text || '';
-        }
+        logger.debug('Received raw text from Gemini:', outputText.substring(0, 200) + (outputText.length > 200 ? '...' : '')); // Log snippet
         
-        safetyAttributes = candidate.safetyRatings ? {
-          categories: candidate.safetyRatings.map((rating: any) => rating.category),
-          blocked: candidate.safetyRatings.some((rating: any) => rating.blocked),
-          scores: candidate.safetyRatings.map((rating: any) => rating.score)
-        } : undefined;
+        if (candidate.safetyRatings) {
+           safetyAttributes = {
+             categories: candidate.safetyRatings.map((rating: any) => rating.category),
+             // Check if any rating was blocked
+             blocked: candidate.finishReason === 'SAFETY', 
+             scores: candidate.safetyRatings.map((rating: any) => rating.score) // Assuming score exists
+           };
+         } else {
+           // If safetyRatings is not present, assume not blocked based on finishReason
+           safetyAttributes = {
+             categories: [],
+             blocked: candidate.finishReason === 'SAFETY', 
+             scores: []
+           };
+         }
+      }
+      
+      // Handle cases where the response might be blocked due to safety settings
+      if (safetyAttributes?.blocked) {
+        logger.warn('Gemini response was blocked due to safety settings.');
+        // Decide how to handle blocked content (e.g., return empty string or specific message)
+        // outputText = '[Content blocked due to safety settings]'; 
       }
       
       return {
@@ -128,16 +137,20 @@ export class GeminiService {
       };
     } catch (error) {
       logger.error('Error generating content with Gemini:', error);
+      // Use the factory function to create the appropriate error
       throw createApiErrorFromAxiosError(error, 'gemini');
     }
   }
   
   /**
    * Analyze and summarize compliance information
+   * NOTE: This specific method might be better placed in a dedicated compliance analysis service
+   *      or called by the formatting service.
    */
   async analyzeComplianceInfo(context: string, query: string): Promise<string> {
     try {
-      // Create a prompt specifically for legal compliance analysis
+      logger.debug('Context provided to analyzeComplianceInfo:', context.substring(0, 500) + (context.length > 500 ? '...' : '')); // Log snippet of context
+
       const prompt = `
 As a legal compliance expert, analyze the following information related to construction industry regulations:
 
@@ -157,17 +170,16 @@ Please provide:
 Format the response in a clear, structured manner that a legal professional would find helpful.
 `;
       
-      // Generate the analysis
       const result = await this.generateContent({ prompt });
       
       return result.text;
     } catch (error) {
       logger.error('Error analyzing compliance information:', error);
-      // If it's already a GeminiApiError, just rethrow it
       if (error instanceof GeminiApiError) {
         throw error;
       }
-      throw new GeminiApiError('Failed to analyze compliance information', 500);
+      // Create a specific error or wrap the original
+      throw new GeminiApiError(`Failed to analyze compliance information: ${error instanceof Error ? error.message : String(error)}`, 500);
     }
   }
 }

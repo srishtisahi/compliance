@@ -412,17 +412,17 @@ export class PerplexityService {
         sources: filteredSources,
         summary: searchResults.summary,
         usage: searchResults.usage,
+        /* <-- Comment out start
         // Add metadata about search parameters
         searchMetadata: {
-          governmentSourcesFocus: governmentSourcesOnly,
-          appliedFilters: {
-            domainCategories: domainCategories || [],
-            minAuthorityScore: minAuthorityScore || 0
-          },
-          totalResultsBeforeFiltering: searchResults.sources.length,
-          governmentSourcesCount: filteredSources.filter(s => s.isGovernment).length,
-          sourceCategoryCounts: this.getSourceCategoryCounts(filteredSources)
+          // TODO: Add more specific parameters based on user input
+          // Example: 
+          // use_case: 'research_assistant',
+          // language: 'en', 
+          // max_tokens: 512,
+          // governmentSourcesFocus: governmentSourcesOnly, // <-- Comment this line
         }
+        */ // <-- Comment out end
       };
     } catch (error) {
       logger.error('Error in enhanced compliance search:', error);

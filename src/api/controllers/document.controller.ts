@@ -10,7 +10,7 @@ interface AuthenticatedRequest extends Request {
     id: string;
     [key: string]: any;
   };
-  file?: multer.File;
+  file?: Express.Multer.File;
 }
 
 /**
