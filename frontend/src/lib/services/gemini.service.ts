@@ -3,7 +3,8 @@ import { logger } from '@/lib/utils/logger'; // Updated path
 import { GeminiApiError, createApiErrorFromAxiosError } from '@/lib/errors/errorHandler'; // Updated path
 
 // Define types for Gemini API (Internal to this service)
-interface GeminiRequestOptions {
+// Export GeminiResponse so it can be imported by other modules
+export interface GeminiRequestOptions {
   prompt: string;
   maxOutputTokens?: number;
   temperature?: number;
@@ -11,7 +12,8 @@ interface GeminiRequestOptions {
   topP?: number;
 }
 
-interface GeminiResponse {
+// Export GeminiResponse so it can be imported by other modules
+export interface GeminiResponse {
   text: string;
   safetyAttributes?: {
     categories: string[];
@@ -32,7 +34,7 @@ export class GeminiService {
     // Use process.env directly for Next.js environment variables
     this.apiKey = process.env.GEMINI_API_KEY || '';
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-    this.model = 'gemini-1.5-pro-latest';
+    this.model = 'gemini-1.5-flash';
     
     if (!this.apiKey) {
       logger.warn('Google Gemini API key (GEMINI_API_KEY) is not set. API calls will fail.');
@@ -95,18 +97,36 @@ export class GeminiService {
         ]
       };
       
+      // *** Revert logging for request body ***
+      // console.log('[Gemini Service] Request Body (console.log):', JSON.stringify(requestBody, null, 2)); // Old console.log
+      logger.debug('[Gemini Service] Request Body:', JSON.stringify(requestBody, null, 2)); // Use logger again
+      // *** END Log request body ***
+
       const response = await axios.post(url, requestBody);
       
+      // *** Revert logging for response data ***
+      // console.log('[Gemini Service] Raw response.data object (console.log):', response.data); // Old console.log
+      logger.debug('[Gemini Service] Raw response.data object:', response.data); // Use logger again
+      // *** END Log full response ***
+
       let outputText = '';
       let safetyAttributes = undefined;
       
       // Safely access nested properties
       const candidate = response.data?.candidates?.[0];
       if (candidate) {
-        outputText = candidate.content?.parts?.[0]?.text || '';
+        // *** Remove Log for candidate.content object ***
+        // console.log('[Gemini Service] candidate.content object (console.log):', candidate.content);
+        // *** END Log candidate.content ***
+
+        // Correct the path to extract text (assuming standard structure for now)
+        outputText = candidate.content?.parts?.[0]?.text || ''; 
         
         logger.debug('Received raw text from Gemini:', outputText.substring(0, 200) + (outputText.length > 200 ? '...' : '')); // Log snippet
         
+        // Log finish reason
+        logger.debug(`[Gemini Service] Finish Reason: ${candidate.finishReason}`);
+
         if (candidate.safetyRatings) {
            safetyAttributes = {
              categories: candidate.safetyRatings.map((rating: any) => rating.category),
@@ -129,6 +149,9 @@ export class GeminiService {
         logger.warn('Gemini response was blocked due to safety settings.');
         // Decide how to handle blocked content (e.g., return empty string or specific message)
         // outputText = '[Content blocked due to safety settings]'; 
+      } else {
+        // Add log if not blocked
+        logger.debug('[Gemini Service] Safety check passed (or no ratings returned).');
       }
       
       return {
@@ -147,10 +170,12 @@ export class GeminiService {
    * NOTE: This specific method might be better placed in a dedicated compliance analysis service
    *      or called by the formatting service.
    */
-  async analyzeComplianceInfo(context: string, query: string): Promise<string> {
+  async analyzeComplianceInfo(context: string, query: string): Promise<GeminiResponse> {
     try {
-      logger.debug('Context provided to analyzeComplianceInfo:', context.substring(0, 500) + (context.length > 500 ? '...' : '')); // Log snippet of context
+      logger.debug('Context provided to analyzeComplianceInfo:', context.substring(0, 500) + (context.length > 500 ? '...' : '')); // Restore original log
+      // logger.warn('[Gemini Service] USING TEST PROMPT - IGNORING INPUT context/query'); // Remove test warning
 
+      // *** Restore original complex prompt construction ***
       const prompt = `
 As a legal compliance expert, analyze the following information related to construction industry regulations:
 
@@ -169,10 +194,19 @@ Please provide:
 
 Format the response in a clear, structured manner that a legal professional would find helpful.
 `;
+
+      // *** Remove TEST PROMPT ***
+      // const prompt = "What is the capital of France? Respond only with the name.";
       
-      const result = await this.generateContent({ prompt });
+      logger.debug(`[Gemini Service] Final prompt snippet being sent: ${prompt.substring(0, 700)}...`);
+
+      // Explicitly set a higher maxOutputTokens for analysis
+      const result = await this.generateContent({ 
+        prompt, 
+        maxOutputTokens: 8192 
+      });
       
-      return result.text;
+      return result;
     } catch (error) {
       logger.error('Error analyzing compliance information:', error);
       if (error instanceof GeminiApiError) {

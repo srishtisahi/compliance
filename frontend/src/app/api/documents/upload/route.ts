@@ -8,8 +8,12 @@ import { PdfReader } from 'pdfreader'; // <-- Import PdfReader
 // import { documentService } from '@/lib/services/document.service'; // <-- REMOVE Service import
 // import mongoose from 'mongoose'; // <-- REMOVE Mongoose import
 // NEW Imports for Gemini Integration
-import { geminiFormattingService, ResponseFormat } from '@/lib/services/geminiFormatting.service';
-import { ComplianceAnalysisResult } from '@/lib/types/api.types'; // Assuming this type exists
+// import { geminiFormattingService, ResponseFormat } from '@/lib/services/geminiFormatting.service';
+import { geminiService, GeminiResponse } from '@/lib/services/gemini.service'; // Assuming GeminiResponse is exported here
+import { formatComplianceResponse, FormattedComplianceResponse } from '@/lib/utils/geminiResponseFormatter';
+import { exportAsClientJson } from '@/lib/utils/geminiResponseExporter';
+import { ComplianceAnalysisResult, DocumentAnalysisRequest } from '@/lib/types/api.types';
+import { ResponseFormat } from '@/lib/services/geminiFormatting.service'; // Keep ResponseFormat if still used for options
 
 // Ensure environment variables are loaded (might need dotenv for local dev if not using Next.js built-in)
 // import dotenv from 'dotenv';
@@ -141,17 +145,62 @@ export async function POST(request: NextRequest) {
     if (extractedText && extractedText.trim().length > 0) {
       logger.info(`Calling Gemini service for document ${mockDocumentId}`);
       try {
-        // Use a default query for now, or adapt to get query from request if needed
         const analysisQuery = "Analyze this document for construction compliance issues, summarizing key obligations, risks, and recent changes.";
-        // Assume default format is 'json' for the analysis result structure
         const responseFormat: ResponseFormat = 'json';
 
-        // Make sure the service method returns the expected structure
-        analysisResult = await geminiFormattingService.analyzeComplianceDocument(
-          extractedText, // Use extracted text as context
-          analysisQuery,
-          { format: responseFormat }
+        // *** TRUNCATE CONTEXT ***
+        const maxContextLength = 15000; // Limit context to ~15k characters
+        let contextToSend = extractedText;
+        if (extractedText.length > maxContextLength) {
+          logger.warn(`Context length (${extractedText.length}) exceeds limit (${maxContextLength}). Truncating.`);
+          contextToSend = extractedText.substring(0, maxContextLength);
+        }
+        // *** END TRUNCATE ***
+
+        // *** Clean extra spaces from the context being sent ***
+        contextToSend = contextToSend.replace(/\s+/g, ' ').trim();
+        logger.debug('Cleaned context for Gemini prompt.');
+        // *** END Clean spaces ***
+
+        logger.debug(`[Gemini Prompt] Query: ${analysisQuery}`);
+        // Log the potentially truncated and cleaned context snippet
+        logger.debug(`[Gemini Prompt] Context Snippet (Cleaned/Truncated? ${extractedText.length > maxContextLength}): ${contextToSend?.substring(0, 500)}...`);
+
+        // 1. Call underlying Gemini Service using the cleaned/truncated context
+        const rawGeminiResponse: GeminiResponse = await geminiService.analyzeComplianceInfo(
+          contextToSend, 
+          analysisQuery
         );
+
+        // 2. Adapt and Format the response
+        //    Need to bridge GeminiResponse to GeminiComplianceAnalysisResponse expected by formatter
+        //    Simplest assumption: Formatter mainly needs the text, maybe other fields are optional or derived.
+        //    Let's create a compatible object. We might need to import GeminiComplianceAnalysisResponse type.
+        const inputForFormatter = { 
+          // Assuming GeminiComplianceAnalysisResponse structure based on formatter code
+          summary: rawGeminiResponse.text, // Primarily use the text
+          // Other fields like obligations, risks, citations might be expected as undefined/empty arrays
+          // if the formatter derives them from the raw text or if they aren't directly in GeminiResponse
+          obligations: [], // Placeholder - Formatter might parse these from summary
+          recentChanges: [], // Placeholder
+          risks: [], // Placeholder
+          citations: [], // Placeholder
+          jurisdictionalNotes: undefined // Placeholder
+        };
+        // We might need to import the GeminiComplianceAnalysisResponse type explicitly
+        // import { GeminiComplianceAnalysisResponse } from '@/lib/types/gemini.types';
+
+        const formattedResponse: FormattedComplianceResponse = formatComplianceResponse(
+          inputForFormatter as any, // Use 'as any' for now, refine if structure is known
+          analysisQuery
+        );
+
+        // 3. Export to Client JSON format
+        // Assuming exportAsClientJson returns a structure compatible with ComplianceAnalysisResult
+        analysisResult = exportAsClientJson(formattedResponse, { 
+          // Pass relevant export options if needed 
+        }) as ComplianceAnalysisResult;
+
         logger.info(`Gemini analysis completed successfully for document ${mockDocumentId}`);
 
       } catch (geminiError: any) {
@@ -167,6 +216,10 @@ export async function POST(request: NextRequest) {
       analysisError = 'No text content found in the document to analyze.';
     }
     // --- *** END NEW: Call Gemini Analysis *** ---
+
+    // *** Log the final analysis object before returning ***
+    console.log('[Upload Route] Final analysisResult object (console.log):', JSON.stringify(analysisResult, null, 2));
+    // *** END Log final analysis object ***
 
     // --- Format Response (Now includes analysis) ---
     return NextResponse.json(

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner'; // Assuming sonner is used for notifications
+// Import the analysis result type
+import { ComplianceAnalysisResult } from '@/lib/types/api.types';
 
 // Define the expected data structure within the API response's 'data' field
 interface UploadResponseData {
@@ -8,6 +10,8 @@ interface UploadResponseData {
   filename: string;
   processingStatus: string;
   extractedText?: string; // <-- Add extractedText field
+  analysis?: ComplianceAnalysisResult | null; // <-- Add analysis field
+  analysisError?: string | null; // <-- Add analysisError field
 }
 
 // Define the overall API response structure
@@ -22,14 +26,15 @@ interface UseDocumentUploadReturn {
   isLoading: boolean;
   error: string | null;
   uploadData: UploadResponseData | null;
-  extractedText: string | null;
+  analysisResult: ComplianceAnalysisResult | null; // <-- Add state for analysis result
 }
 
 export function useDocumentUpload(): UseDocumentUploadReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadData, setUploadData] = useState<UploadResponseData | null>(null);
-  const [extractedText, setExtractedText] = useState<string | null>(null);
+  // Add new state for analysis result
+  const [analysisResult, setAnalysisResult] = useState<ComplianceAnalysisResult | null>(null);
 
   const uploadDocument = async (
     file: File,
@@ -38,7 +43,7 @@ export function useDocumentUpload(): UseDocumentUploadReturn {
     setIsLoading(true);
     setError(null);
     setUploadData(null);
-    setExtractedText(null);
+    setAnalysisResult(null); // Reset analysis state
 
     const formData = new FormData();
     formData.append('document', file);
@@ -54,7 +59,7 @@ export function useDocumentUpload(): UseDocumentUploadReturn {
       // const uploadUrl = `${apiBaseUrl}/api/v1/documents/upload`;
       const uploadUrl = '/api/documents/upload'; // Internal route path
 
-      // Use the generic ApiResponse type with UploadResponseData
+      // Update the expected type in axios.post to include the analysis field
       const response = await axios.post<ApiResponse<UploadResponseData>>(
         uploadUrl,
         formData,
@@ -69,18 +74,28 @@ export function useDocumentUpload(): UseDocumentUploadReturn {
       // Check for success field and data presence
       if (response.data && response.data.success && response.data.data) {
         setUploadData(response.data.data);
-        // Store extracted text if available
-        setExtractedText(response.data.data.extractedText || null);
-        toast.success(response.data.message || 'Document uploaded and processed successfully.');
+        // Update analysis state
+        setAnalysisResult(response.data.data.analysis || null);
+        
+        // Optionally check for analysis error in the response data
+        if (response.data.data.analysisError) {
+          toast.warning(`Analysis completed with issues: ${response.data.data.analysisError}`);
+        } else {
+          toast.success(response.data.message || 'Document uploaded and analyzed successfully.');
+        }
+
         setIsLoading(false);
-        return response.data;
+        return response.data; // Return the full data including analysis
       } else {
+        // Handle cases where success is false or data is missing
+        setAnalysisResult(null); // Ensure analysis is null on failure
         throw new Error(response.data.message || 'Document upload failed or processing error.');
       }
     } catch (err: any) {
       console.error('Error uploading document:', err);
       const errorMessage = err.response?.data?.message || err.message || 'An unknown error occurred during upload.';
       setError(errorMessage);
+      setAnalysisResult(null); // Ensure analysis is null on error
       toast.error(`Upload failed: ${errorMessage}`);
       setIsLoading(false);
       return null;
@@ -92,6 +107,6 @@ export function useDocumentUpload(): UseDocumentUploadReturn {
     isLoading,
     error,
     uploadData,
-    extractedText,
+    analysisResult, // <-- Return analysis state
   };
 } 
